@@ -1,0 +1,558 @@
+<!DOCTYPE html> 
+<html>
+<head>
+<meta charset="utf-8">
+<title>Georeferencia 1.0</title>
+<link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.5.min.css" />
+<link rel="stylesheet" type="text/css" href="css/jquery-ui.css" />
+<script src="cordova.js"></script>
+<script src="js/jquery.min.js" type="text/javascript"></script>
+<script src="js/jquery-ui.js" type="text/javascript"></script>
+<script src="js/jquery.mobile-1.4.5.min.js" type="text/javascript"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script type="text/javascript">
+$(document).on("pageinit","#pantalla", function(e, data){
+
+ var mapa;
+ var miOptions;
+ var defaultPos;
+ var marca;
+ var infoVentanta;
+ 
+   document.addEventListener("deviceready", onDeviceReady, false);
+  
+    function onDeviceReady(){
+
+	$("#btnConsServ").tap(function (){//Evento de botón para consultar los servicios de la base de datos
+	 defaultPos=new  google.maps.LatLng(19.463948, -97.686259);
+	    miOptions={
+	      zoom:16,
+	      center:defaultPos,
+	      disableDefaultUI:true,
+	      mapTypeId:google.maps.MapTypeId.ROADMAP};
+		  
+	  map= new google.maps.Map(document.getElementById("map-canvas"),miOptions);
+	  obtenerUbicacion();
+	  obtenerMarcas();
+	});
+	
+	$("#obtenercord").tap(function(){//Obtener coordenadas para el registro del servicio 
+	  obtenerUbicacion();	    	  
+	});    
+	
+	$("#btnTomarFoto").tap(function (){//Capturar fotografia
+            navigator.device.capture.captureImage(function(mediaFiles){
+		path = mediaFiles[0].fullPath;
+		$('#regFoto').append('<br><img id="imagen" src="'+path+'" width="100%" />').attr('rel',path);
+	    },function(error){
+		navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
+	    },{limit:1});            
+         });   
+         
+         
+       $("#btnGuardar").tap(function (){	          
+	   // alert("ruta: "+$("#imagen").attr("src"));
+	      if($("#imagen").attr("src")==""){
+		alert("Antes de registrar el servicio debe tomar una fotografía del mismo ");
+	      }else{			
+		var nom=$("#Nombre").val();
+		var dir=$("#Direccion").val();
+		var gir=$("#Giro").val();
+		var lat=$("#obtLatitud").val();
+		var lon=$("#obtLongitud").val();
+		
+		$.ajax({
+		  type:"POST",
+		  url:"http://rosaisc.260mb.net/guardarServicios.php",
+		  data:"nombre="+nom+"&dir="+dir+"&gir="+gir+"&lat="+lat+"&long="+lon,
+		  success: guardandoServicios		  		
+		});
+		
+		function guardandoServicios(datos){
+		  alert("Respuesta: "+datos);
+		}
+		uploadPhoto($("#imagen").attr("src"));	
+	    }
+        }); 
+        
+        
+        var btnConsulta=$("#consultarTo");//consultar todos los registros
+	btnConsulta.click(function cons(){  
+	$.ajax({
+	type:"POST",
+	url:"http://rosaisc.260mb.net/consultaTodos.php",
+	data:"",
+	success: consultaDatos
+	});
+	 
+    
+    function consultaDatos(datos){
+    var respDatos=$.parseJSON(datos);   
+    var respuesta=$("#resconsulta");
+    dibujarTabla(respuesta, respDatos);
+    }
+  });
+
+  var btnConsAct2=$("#btnConsAct2");
+  btnConsAct2.click(function cargarDat2(){  
+  //alert("listo");
+    $.ajax({
+    type:"POST",
+    url:"http://rosaisc.260mb.net/consultaTodos.php",
+    data:"",
+    success: cargarDatos2
+    });
+    
+    function cargarDatos2(datos2){
+        //alert("listo"+datos2);
+      var respDatos2=$.parseJSON(datos2);       
+      var respuesta2=$("#respConAct2");      
+      //dibujarTabla2(respuesta, respDatos2);
+      if(respDatos2!=0){
+    respuesta2.html("");
+    respuesta2.append('<table id="tab2" border="1">');
+    var tabla2=$("#tab2");
+    tabla2.html("<tr><th>Id</th><th>Nombre</th><th>Direccion</th><th>Giro</th><th>Foto</th><th>Latitud</th><th>Longitud</th></tr>");
+    for(var i in respDatos2){
+      tabla2.append("<tr><td>"+respDatos2[i].id+"</td>"
+      +"<td>"+respDatos2[i].nombre+"</td>"
+      +"<td>"+respDatos2[i].direccion+"</td>"
+      +"<td>"+respDatos2[i].giro+"</td>"
+         +"<td>"+respDatos2[i].foto+"</td>"
+      +"<td>"+respDatos2[i].latitud+"</td>"
+      +"<td>"+respDatos2[i].longitud+"</td></tr>");
+    }
+    tabla2.append("</table>");
+    }else{
+  respuesta2.html('<p>No existen registros</p>');
+  }
+    }
+  });
+  
+  var btnCarDatos2=$("#btnCarDatos2");
+  btnCarDatos2.click(function cargarInf2(){
+  var Id=parseInt($("#nomActualizar2").val());
+    $.ajax({
+    type:"POST",
+    url:"http://rosaisc.260mb.net/consultaUno.php",
+    data:"id="+Id,
+    success: cargarDatosAct2
+    });
+    
+    function cargarDatosAct2(datos2){
+      var consDatAct2=$.parseJSON(datos2);
+      var respCargDatos2=$("#respCargDatos2");//Div del resultado para dibujar controles
+       if(consDatAct2!=0){ 
+      respCargDatos2.html("<label>Id</label><input type='text' id='idd' disabled='yes'>");
+      respCargDatos2.append("<label>Nombre:</label><input type='text' id='nom'>");
+      respCargDatos2.append("<label>Direccion:</label><input type='text' id='dir'>");
+      respCargDatos2.append("<label>Giro:</label><input type='text' id='gir'>");
+      respCargDatos2.append("<label>Foto:</label><input type='text' id='fot'>");
+      respCargDatos2.append("<label>Latitud:</label><input type='text' id='lat'>");
+      respCargDatos2.append("<label>Longitud:</label><input type='text' id='lon'>");
+     
+ 
+      var id=$("#idd");
+      var nom=$("#nom");
+      var dir=$("#dir");
+      var gir=$("#gir");
+      var fot=$("#fot");
+      var lat=$("#lat");
+      var lon=$("#lon");
+     
+  
+      for(var i in consDatAct2){
+	id.val(consDatAct2[i].id);
+	nom.val(consDatAct2[i].nombre);
+	dir.val(consDatAct2[i].direccion);
+	gir.val(consDatAct2[i].giro);
+        fot.val(consDatAct2[i].foto);
+        lat.val(consDatAct2[i].latitud);
+        lon.val(consDatAct2[i].longitud);
+	
+       }   
+  }else{
+  respCargDatos2.html('<p>No existen registros</p>');
+  }
+    }
+   });
+  
+  
+  var btnGuarDatos=$("#btnGuarDatos2");
+      btnGuarDatos.click(function actual(){
+	
+      var Id=parseInt($("#idd").val());
+      var nombre=$("#nom").val();
+      var direccion=$("#dir").val();
+      var giro=$("#gir").val();
+      var foto=$("#fot").val();
+      var latitud=$("#lat").val();
+      var longitud=$("#lon").val();
+      
+     
+     
+      
+     
+
+      if(nombre=="" || direccion=="" ||   giro=="" || foto=="" || latitud=="" || longitud=="" ){
+	alert("Ingresa información en todos los campos");
+      }else{
+	$.ajax({
+	  type:"POST",
+	  url:"http://rosaisc.260mb.net/actualizarInf.php",
+	  data:"id="+Id+"&nombre="+nombre+"&direccion="+direccion+"&giro="+giro+"&foto="+foto+"&latitud="+latitud+"&longitud="+longitud,
+	  success: actualizacion2
+	 
+	});
+	 
+      }   
+      function actualizacion2(datos2){
+	  alert("datos:"+datos2);
+	}
+    
+   });
+    
+   
+       var btnEliminar=$("#btnEliminar");
+   
+      btnEliminar.click(function actual(){
+      var idEliminar=parseInt($("#idEliminar").val());
+      
+	$.ajax({
+	  type:"POST",
+	  url:"http://rosaisc.260mb.net/eliminar.php",
+	  data:"id="+idEliminar,
+	  success: eliminacion
+	});
+		  
+      function eliminacion(datos){
+	  alert(datos);
+	}
+   });
+          //alert("listo");   	
+    }
+    
+ function uploadPhoto(foto) {  
+	//alert("si entro: "+foto);
+	var options = new FileUploadOptions();
+	options.fileKey="file";
+	options.fileName=$("#Nombre").val();
+	options.mimeType="image/jpeg";
+        //alert("si entro a upload: "+options.fileName);
+	var params = {};
+	params.value1 = "test";
+	params.value2 = "param";
+	options.params = params;
+
+	var ft = new FileTransfer();
+	ft.upload(foto,"http://rosaisc.260mb.net/upload.php",function(r){		
+		navigator.notification.confirm("El archivo: "+r.response,null, "Notificacion");
+	}, function(err){
+		navigator.notification.alert("Error: "+err.code+" detalle: "+err.response,null, "Error de Envío");
+	}, options);
+}
+
+    
+    function obtenerUbicacion(){//Funcion que obtiene la Ubicación del dispositivo móvil
+    if(navigator.geolocation){	
+      var opciones={maximumAge:500000,enableHighAccuracy:true,timeout:5000};
+      navigator.geolocation.getCurrentPosition(exito, falla, opciones);
+      
+	  function exito(posic){
+	      var corUbic=new google.maps.LatLng(posic.coords.latitude, posic.coords.longitude);
+	      $("#obtLatitud").val(posic.coords.latitude);
+	      $("#obtLongitud").val(posic.coords.longitude);
+	      marca=new google.maps.Marker({
+		  position:corUbic,
+		  map:map,
+		  title:"Usted esta ubicado aqui",
+		  animation:google.maps.Animation.DROP
+	      });
+
+	      infoVentanta=new google.maps.InfoWindow({
+		  position:corUbic,
+		  content:"<p>Tu Ubicación es: </p>"+corUbic
+	      });
+	     
+	      google.maps.event.addListener(marca, "click", function(){infoVentanta.open(map,this);});	 	      	       
+	  }
+	
+	  function falla(error){
+	      alert("Error en el servicio Geolocalizador");
+	  }
+	  	      
+	  }else{
+	      alert("Su dispositivo no soporta la geolocalización o no esta habilitada esta funcionalidad");
+	  }	 
+    }	
+        
+        function obtenerMarcas(){
+	  var opciones={maximumAge:500000,enableHighAccuracy:true,timeout:5000};
+	  navigator.geolocation.getCurrentPosition(exito, falla, opciones);
+	  if(navigator.geolocation){	
+	    function exito(posic){	      	      	         	     
+	      $.ajax({
+		type:"POST",
+		url:"http://rosaisc.260mb.net/consultaServ.php",
+		data:"",
+		success: serviciosConsultados
+	      });	     
+	      
+	      function serviciosConsultados(datos){
+		var respDatos=$.parseJSON(datos); 
+		var nombre, dir, gir, lat, lng, ruta;
+		for(var i in respDatos){		 
+		  nombre=respDatos[i].nombre;//Cambiarlos de acuerdo a los campos de su base de datos
+		  dir=respDatos[i].direccion;
+		  gir=respDatos[i].giro;
+		  lat=respDatos[i].latitud; 
+		  lng=respDatos[i].longitud;
+		  ruta=respDatos[i].foto;
+		  dibujarMarcas(nombre, dir, gir, lat, lng, ruta);
+	      }
+	    }
+	 }
+	    function falla(error){
+	      alert("Error en el servicio Geolocalizador");
+	      dibujarMarcas(defaultPos);
+	    }
+	  	      
+	    }else{
+	      dibujarMarcas(defaultPos);
+	    }
+	}
+
+
+    function dibujarMarcas(nombre, dir, gir , lat, lng, ruta){//habilitar esta función
+ 
+         var latlng=new google.maps.LatLng(lat,lng);
+  	 	  
+	  var marca2=new google.maps.Marker({
+	      position:latlng,
+	      map:map,
+	      title:"Mi posición",
+	      animation:google.maps.Animation.DROP
+	  });
+	  
+	  var infoVentanta2=new google.maps.InfoWindow({
+	    position:latlng,
+	    //content:"<p>Tu posicion actual es: </p>"+latlng
+	   content:'<div style="width:200px; height:160px;"><div style="text-align: center; color:#5c041b; font-weight:bolder; font-size:12px; font-family:arial;">' + nombre + '</div><img src="'+ruta+'" width="100" heigth="60" /><div style="text-align:center; color: #2e20b8; font-size:12px; font-family:arial; width:200px; text-align:center;">Dirección:' + dir + '</div><div>Giro: ' + gir + '</div>'
+	  });
+	  google.maps.event.addListener(marca2, "click", function(){infoVentanta2.open(map,this);});
+    } 
+  
+  
+  function dibujarTabla(respuesta, respDatos){
+    if(respDatos!=0){
+  respuesta.html("");
+    respuesta.append('<table id="tab" border="1">');
+    var tabla=$("#tab");
+    tabla.html("<tr><th>Id</th><th>Nombre</th><th>Direccion</th><th>Giro</th><th>Foto</th><th>Latitud</th><th>Longitud</th></tr>");
+    for(var i in respDatos){
+      tabla.append("<tr><td>"+respDatos[i].id+"</td>"
+      +"<td>"+respDatos[i].nombre+"</td>"
+      +"<td>"+respDatos[i].direccion+"</td>"
+      +"<td>"+respDatos[i].giro+"</td>"
+         +"<td>"+respDatos[i].foto+"</td>"
+      +"<td>"+respDatos[i].latitud+"</td>"
+      +"<td>"+respDatos[i].longitud+"</td></tr>");
+    }
+    tabla.append("</table>");
+    }else{
+  respuesta.html('<p>No existen registros</p>');
+  }
+  }
+ 
+      
+    
+ });
+</script>
+<style >
+#map-canvas{
+  height:95%;
+  width:100%;
+  padding:0px;
+  position: absolute;
+  top:45px;
+  right:0px;
+  bottom:40px;
+  left:0px;
+}
+
+p{
+text-align:center;
+}
+
+#uno{
+  background:aqua;  
+    
+}
+#f{
+    font-size: 29px;
+    text-align: center;
+}
+#n{
+  font-style: oblique;
+  font-size: 20px;
+  background:yellowgreen;
+}
+#pa{
+    color: brown;
+}
+#pa1{
+    font-size: 10px;
+}
+</style>
+</head>
+<body>
+    
+    <div data-role="page" id="pantalla">
+  <div data-role="header" id="uno" >
+         <img src="images/sistemas.png" height="100" width="100" align="right">
+           <img src="images/tec.png" height="100" width="100" align="left">
+           <p id="pa1">Instituto Tecnológico Superior de Libres</p>
+    
+      <p id="pa1">Organismo Público Descentralizado del Estado de Puebla</p>
+      <p id="pa1">Ingenieria en Sistemas Computacionales</p>
+      <!--img src="images/sistemas.png" height="240" width="240"-->
+  </div>
+  <div data-role="content">
+    <div>
+     
+        <p id="n"><b>Integrantes:</b></p>
+     <p id="pa">Barrera Rosales Eva María</p>
+     <p id="pa">Reyes Salazar Rosa Maria</p><p></p>
+        
+     <p id="n"><b>Materia:</b></p>
+     <p id="pa">Desarrollo de Aplicaciones Moviles I y II</p><p>
+          
+     <p id="n"><b>Docente:</b></p>
+     <p id="pa">Alejandro Guzmán Rodríguez</p>
+     
+    </div>
+  </div>
+  <div data-role="footer" align="center">
+ <ul data-role="listview">
+	<li><a href="#Principal" id="f" >Ir a aplicación<img src="images/localizar.gif" height="500" width="500" align="right" ></a></li>
+        
+      </ul>
+  </div>
+</div>
+    
+<div data-role="page" id="Principal">
+      <div data-role="header" data-position="fixed">
+	<h1>Catálogo de Servicios Libres</h1>
+      </div>
+      <div data-role="content" >  
+	  <ul data-role="listview">
+	    <li data-role="list-divider" style="text-align:center;">Operaciones</li>
+	    <li><a href="#Registrar">Registrar servicios</a></li>
+	    <li><a href="#Consultar">Consultar Mapas</a></li>
+            <li><a href="#consultarT">Consultar Registros</a></li>
+	    <li><a href="#actu">Actualizar servicios</a></li>
+	    <li><a href="#Eliminar">Eliminiar servicios</a></li>
+	  </ul>
+      </div>
+      <div data-role="footer" data-position="fixed" style="text-align:center;">
+	<div data-role="controlgroup" data-type="horizontal">
+	<a href="#" class="ui-btn ui-icon-home ui-btn-icon-left">Acerca de ..</a>
+	</div>
+      </div>
+</div>
+
+<div data-role="page" id="Registrar">
+      <div data-role="header" data-position="fixed">
+	<h1>Registro de Servicios</h1>
+      </div>
+      <div data-role="content" > 
+	  <input type="text" id="Nombre" placeholder="Nombre del servicio" />
+	  <input type="text" id="Direccion" placeholder="Dirección" />
+	  <input type="text" id="Giro" placeholder="Giro" list="doc"/>
+	   <datalist id="doc">
+                <option>Servicios</option>
+                 <option>Industriales</option>
+                  <option>Comercial</option>
+            </datalist>
+	  <input type="button" id="btnTomarFoto" value="Tomar Foto" >
+	  <div id="regFoto"><!--img id="imagen2" src="images.jpg" rel="images.jpg" /--></div>
+	  <input type="text" id="obtLatitud" placeholder="Latitud" />
+	  <input type="text" id="obtLongitud" placeholder="Longitud" />
+	  <input type="button" id="obtenercord" value="Obtener coordenadas" />
+	  <input type="button" id="btnGuardar" value="Guardar Servicio" />
+      </div>
+      <div data-role="footer" data-position="fixed" style="text-align:center;">
+	<div data-role="controlgroup" data-type="horizontal">
+	  <a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+	</div>
+      </div>
+</div>
+
+<div data-role="page" id="Consultar" data-url="map-page">
+      <div data-role="header" data-position="fixed">
+	<h1>Ubicación de servicios</h1>
+      </div>
+      <div data-role="content" >  
+	  <div id="map-canvas">Pulse Consultar servicios para identificar su ubicación en el mapa</div>
+      </div>
+      <div data-role="footer" data-position="fixed" style="text-align:center;">
+	<div data-role="controlgroup" data-type="horizontal">
+	<a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+	<a href="#" class="ui-btn ui-icon-search ui-btn-icon-left" id="btnConsServ">Consultar servicios</a>
+	</div>
+      </div>
+  
+</div>
+    <div data-role="page" id="consultarT">
+  <div data-role="header" >
+    <p>Consultar todos</p>
+  </div>
+  <div data-role="content">
+    <input type="button" id="consultarTo" value="Consultar">
+    <div id="resconsulta"></div>
+  </div>
+  <div data-role="footer">
+<a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+  </div>
+</div>
+    
+    
+    <div data-role="page" id="actu">
+  <div data-role="header" >
+    <p>Actualizar registros</p>
+  </div>
+  <div data-role="content">
+    <input type="button" id="btnConsAct2" value="Mostrar todos los registros">
+    <div id="respConAct2"></div>
+    <label for="nomActualizar2">ID a actualizar</label>
+    <input type="text" id="nomActualizar2" >
+    <input type="button" id="btnCarDatos2" value="Cargar Datos">
+    <div id="respCargDatos2"></div>
+    <input type="button" id="btnGuarDatos2" value="Guardar Datos">
+  </div>
+  <div data-role="footer">
+<a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+  </div>
+</div>
+  
+    
+    <div data-role="page" id="Eliminar">
+  <div data-role="header" >
+    <p>Eliminar Registros</p>
+  </div>
+  <div data-role="content">
+    <!--input type="button" id="btnConsEliminar" value="Mostrar todos los registros">
+    <div id="respConElim"></div-->
+    <label for="idEliminar">ID a eliminar</label>
+    <input type="text" id="idEliminar" >
+    <!--input type="button" id="btnCarDatosElim" value="Cargar Datos"-->
+    <!--div id="respCargDatos2"></div-->
+    <input type="button" id="btnEliminar" value="Eliminar Datos">
+  </div>
+  <div data-role="footer">
+<a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+  </div>
+</div>
+ 
+</body>
+</html>
