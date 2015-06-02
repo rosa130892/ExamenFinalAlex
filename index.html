@@ -6,6 +6,7 @@
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.5.min.css" />
 <link rel="stylesheet" type="text/css" href="css/jquery-ui.css" />
 <script src="cordova.js"></script>
+<script src="phonegap.js"></script>
 <script src="js/jquery.min.js" type="text/javascript"></script>
 <script src="js/jquery-ui.js" type="text/javascript"></script>
 <script src="js/jquery.mobile-1.4.5.min.js" type="text/javascript"></script>
@@ -47,8 +48,8 @@ $(document).on("pageinit","#Principal", function(e, data){
 	    },function(error){
 		navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
 	    },{limit:1});            
-         });   
-         
+         });    
+ 
          
        $("#btnGuardar").tap(function (){	          
 	   // alert("ruta: "+$("#imagen").attr("src"));
@@ -250,7 +251,7 @@ $(document).on("pageinit","#Principal", function(e, data){
 	}, function(err){
 		navigator.notification.alert("Error: "+err.code+" detalle: "+err.response,null, "Error de Envío");
 	}, options);
-}
+         }
 
     
     function obtenerUbicacion(){//Funcion que obtiene la Ubicación del dispositivo móvil
@@ -473,9 +474,12 @@ text-align:center;
                 <option>Servicios</option>
                  <option>Industriales</option>
                   <option>Comercial</option>
-            </datalist>
-	  <input type="button" id="btnTomarFoto" value="Tomar Foto" >
-	  <div id="regFoto"><!--img id="imagen2" src="images.jpg" rel="images.jpg" /--></div>
+            </datalist>          
+          <ul data-role="listview" data-inset="true" data-dividertheme="b" data-theme="a">
+          <li><a href="#" id="btnTomarFoto">Tomar Foto</a></li>
+          <li><div id="regFoto"></div></li>
+          </ul>
+          
 	  <input type="text" id="obtLatitud" placeholder="Latitud" />
 	  <input type="text" id="obtLongitud" placeholder="Longitud" />
 	  <input type="button" id="obtenercord" value="Obtener coordenadas" />
