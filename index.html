@@ -16,23 +16,22 @@ $(document).on("pageinit","#Principal", function(e, data){
  var mapa;
  var miOptions;
  var defaultPos;
+ var opciones;
  var marca;
  var infoVentanta;
+ defaultPos=new  google.maps.LatLng(19.463948, -97.686259);
+ opciones={maximumAge:500000,enableHighAccuracy:true,timeout:5000};
  
    document.addEventListener("deviceready", onDeviceReady, false);
-  
     function onDeviceReady(){
-
-	$("#btnConsServ").tap(function (){//Evento de botón para consultar los servicios de la base de datos
-	 defaultPos=new  google.maps.LatLng(19.463948, -97.686259);
+	$("#btnConsServ").tap(function (){//Evento de botón para consultar los servicios de la base de datos	 
 	    miOptions={
-	      zoom:16,
+	      zoom:8,
 	      center:defaultPos,
 	      disableDefaultUI:true,
 	      mapTypeId:google.maps.MapTypeId.ROADMAP};
 		  
 	  map= new google.maps.Map(document.getElementById("map-canvas"),miOptions);
-	  obtenerUbicacion();
 	  obtenerMarcas();
 	});
 	
@@ -47,7 +46,7 @@ $(document).on("pageinit","#Principal", function(e, data){
 	    },function(error){
 		navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
 	    },{limit:1});            
-         });    
+         });   
          
          
        $("#btnGuardar").tap(function (){	          
@@ -232,7 +231,8 @@ $(document).on("pageinit","#Principal", function(e, data){
           //alert("listo");   	
     }
     
- function uploadPhoto(foto) {  
+     
+      function uploadPhoto(foto) {  
 	//alert("si entro: "+foto);
 	var options = new FileUploadOptions();
 	options.fileKey="file";
@@ -250,8 +250,7 @@ $(document).on("pageinit","#Principal", function(e, data){
 	}, function(err){
 		navigator.notification.alert("Error: "+err.code+" detalle: "+err.response,null, "Error de Envío");
 	}, options);
-         }
-
+}
     
     function obtenerUbicacion(){//Funcion que obtiene la Ubicación del dispositivo móvil
     if(navigator.geolocation){	
@@ -326,7 +325,9 @@ $(document).on("pageinit","#Principal", function(e, data){
     function dibujarMarcas(nombre, dir, gir , lat, lng, ruta){//habilitar esta función
  
          var latlng=new google.maps.LatLng(lat,lng);
-  	 	  
+  	 alert("si llego: Lat:"+lat+" Long:"+lng+" ruta: "+ruta );
+          var latlng=new google.maps.LatLng(lat,lng);
+          
 	  var marca2=new google.maps.Marker({
 	      position:latlng,
 	      map:map,
@@ -337,12 +338,11 @@ $(document).on("pageinit","#Principal", function(e, data){
 	  var infoVentanta2=new google.maps.InfoWindow({
 	    position:latlng,
 	    //content:"<p>Tu posicion actual es: </p>"+latlng
-	   content:'<div style="width:200px; height:160px;"><div style="text-align: center; color:#5c041b; font-weight:bolder; font-size:12px; font-family:arial;">' + nombre + '</div><img src="'+ruta+'" width="100" heigth="60" /><div style="text-align:center; color: #2e20b8; font-size:12px; font-family:arial; width:200px; text-align:center;">Dirección:' + dir + '</div><div>Giro: ' + gir + '</div>'
+	   content:'<div style="width:200px; height:160px;"><div style="text-align: center; color:#5c041b; font-weight:bolder; font-size:12px; font-family:arial;">' + nombre + '</div><img src=http://rosaisc.260mb.net/"'+ruta+'" width="100" heigth="60" /><div style="text-align:center; color: #2e20b8; font-size:12px; font-family:arial; width:200px; text-align:center;">Dirección:' + dir + '</div><div>Giro: ' + gir + '</div>'
 	  });
-	  google.maps.event.addListener(marca2, "click", function(){infoVentanta2.open(map,this);});
+	google.maps.event.addListener(marca2, "click", function(){infoVentanta2.open(map,marca2);});
     } 
-  
-  
+                  
   function dibujarTabla(respuesta, respDatos){
     if(respDatos!=0){
   respuesta.html("");
@@ -365,7 +365,7 @@ $(document).on("pageinit","#Principal", function(e, data){
   }
  
       
-    
+   
  });
 </script>
 <style >
@@ -409,7 +409,7 @@ text-align:center;
     
     <!--div data-role="page" id="pantalla">
   <div data-role="header" id="uno" >
-         <img src="images/sistemas.png" height="100" width="100" align="right">
+         <img src="images/sistemas.png" height="180" width="180" align="right">
            <img src="images/tec.png" height="100" width="100" align="left">
            <p id="pa1">Instituto Tecnológico Superior de Libres</p>
     
@@ -456,7 +456,7 @@ text-align:center;
       </div>
       <div data-role="footer" data-position="fixed" style="text-align:center;">
 	<div data-role="controlgroup" data-type="horizontal">
-	<a href="#" class="ui-btn ui-icon-home ui-btn-icon-left">Acerca de ..</a>
+	<a href="#acerca" class="ui-btn ui-icon-home ui-btn-icon-left">Acerca de ..</a>
 	</div>
       </div>
 </div>
@@ -474,10 +474,8 @@ text-align:center;
                  <option>Industriales</option>
                   <option>Comercial</option>
             </datalist>
-           <ul data-role="listview" data-inset="true" data-dividertheme="b" data-theme="a">
-               <li><input type="button" id="btnTomarFoto" value="Tomar Foto" ></li>
-	  <li><div id="regFoto"></div></li>
-          </ul>
+	  <input type="button" id="btnTomarFoto" value="Tomar Foto" >
+	  <div id="regFoto"><!--img id="imagen2" src="images.jpg" rel="images.jpg" /--></div>
 	  <input type="text" id="obtLatitud" placeholder="Latitud" />
 	  <input type="text" id="obtLongitud" placeholder="Longitud" />
 	  <input type="button" id="obtenercord" value="Obtener coordenadas" />
@@ -513,7 +511,7 @@ text-align:center;
     <input type="button" id="consultarTo" value="Consultar">
     <div id="resconsulta"></div>
   </div>
-  <div data-role="footer">
+  <div data-role="footer" align="center">
 <a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
   </div>
 </div>
@@ -532,7 +530,7 @@ text-align:center;
     <div id="respCargDatos2"></div>
     <input type="button" id="btnGuarDatos2" value="Guardar Datos">
   </div>
-  <div data-role="footer">
+  <div data-role="footer" align="center">
 <a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
   </div>
 </div>
@@ -552,6 +550,36 @@ text-align:center;
     <input type="button" id="btnEliminar" value="Eliminar Datos">
   </div>
   <div data-role="footer">
+<a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
+  </div>
+</div>
+  
+  <div data-role="page" id="acerca">
+  <div data-role="header" id="uno" >
+      
+           <img src="images/tec.png" height="80" width="80" align="left">
+           <p id="pa1">Instituto Tecnológico Superior de Libres</p>
+    
+      <p id="pa1">Organismo Público Descentralizado del Estado de Puebla</p>
+      <p id="pa1">Ingenieria en Sistemas Computacionales</p>
+      <!--img src="images/sistemas.png" height="240" width="240"-->
+  </div>
+  <div data-role="content">
+    <div>
+     
+        <p id="n"><b>Integrantes:</b></p>
+     <p id="pa">Barrera Rosales Eva María</p>
+     <p id="pa">Reyes Salazar Rosa Maria</p><p></p>
+        
+     <p id="n"><b>Materia:</b></p>
+     <p id="pa">Desarrollo de Aplicaciones Moviles I y II</p><p>
+          
+     <p id="n"><b>Docente:</b></p>
+     <p id="pa">Alejandro Guzmán Rodríguez</p>
+     
+    </div>
+  </div>
+  <div data-role="footer" align="center">
 <a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a>
   </div>
 </div>
